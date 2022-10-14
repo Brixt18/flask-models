@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-setup.setup(
+setup(
     name='flask_models',
     packages=find_packages(include=["models"]),
     version='0.0.2',
