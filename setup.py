@@ -7,5 +7,5 @@ setup(
     description='Basics models for Python-Flask',
     author='Brixt18',
     license='MIT',
-    setup_requires=['flask', "flask-login", "flask-sqlalchemy", ],
+    install_requires=['flask', "flask-login", "flask-sqlalchemy", ],
 )
