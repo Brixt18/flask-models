@@ -4,7 +4,6 @@ from sqlite3 import IntegrityError
 
 from flask import abort
 from flask_login import current_user
-from sqlalchemy import func
 
 from .const import *
 
