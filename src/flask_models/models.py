@@ -19,39 +19,46 @@ def _generate_token(number=10):
 class _CRUD:
     __abstract__ = True
 
-    def save(self):
-        db.session.begin_nested()  # create checkpoint
-        db.session.add(self)
+    def _check_auth(self, check_auth):
+        if (check_auth) and (not current_user.is_authenticated):
+            return False
 
-        #  generate token
-        if not self.token:
-            self.token = _generate_token(15)
+        return True
 
-        while self._exist_token(self.token):
-            self.token = _generate_token(15)
+    def save(self, check_auth: bool = True):
+        if self._check_auth(check_auth):
+            db.session.begin_nested()  # create checkpoint
+            db.session.add(self)
 
-        # commit
-        try:
-            db.session.commit()
+            #  generate token
+            if not self.token:
+                self.token = _generate_token(15)
 
-        except IntegrityError:
-            db.session.rollback()
+            while self._exist_token(self.token):
+                self.token = _generate_token(15)
 
-    def delete(self):
-        db.session.begin_nested()
-        try:
-            if (current_user.is_authenticated):
+            # commit
+            try:
+                db.session.commit()
+
+            except IntegrityError:
+                db.session.rollback()
+
+    def delete(self, check_auth: bool = True):
+        if self._check_auth(check_auth):
+            db.session.begin_nested()
+            try:
                 db.session.delete(self)
 
-            db.session.commit()
+                db.session.commit()
 
-        except IntegrityError:
-            db.session.rollback()
+            except IntegrityError:
+                db.session.rollback()
 
-    def update(self, data: dict):
-        db.session.begin_nested()
-        try:
-            if (current_user.is_authenticated):
+    def update(self, data: dict, check_auth: bool = True):
+        if self._check_auth(check_auth):
+            db.session.begin_nested()
+            try:
                 for key, value in data.items():
                     if hasattr(self, key):
                         setattr(self, key, value)
@@ -59,10 +66,10 @@ class _CRUD:
                 if hasattr(self, "updated_at"):
                     self.updated_at = datetime.utcnow()
 
-            db.session.commit()
+                db.session.commit()
 
-        except IntegrityError as e:
-            db.session.rollback()
+            except IntegrityError as e:
+                db.session.rollback()
 
     def _exist_token(self, token):
         query = self.get_by_token(token)
@@ -121,7 +128,8 @@ class Model(db.Model, _CRUD):
     token = COLUMN(STRING(32), unique=True, nullable=False)
 
     created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow())
-    updated_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow(), onupdate=datetime.utcnow())
+    updated_at = COLUMN(DATETIME, nullable=False,
+                        default=datetime.utcnow(), onupdate=datetime.utcnow())
     is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
     def __init__(self, *args, **kwargs):
