@@ -80,41 +80,26 @@ class _CRUD:
         return True
 
     @classmethod
-    def get_by_id(cls, id, or_404: bool = False, _abort: bool = True) -> "object|None":
-        if not hasattr(cls, "id"):
-            raise ValueError(f"{cls.__name__} has no 'id' attribute.")
-
+    def get_by_id(cls, id, or_404: bool = False) -> "object|None":
         query = cls.query.filter_by(id=id).first()
 
         if (not query) and (or_404):
-            if _abort:
-                abort(404)
-
-            return {}, 404
+            abort(404)
 
         return query
 
     @classmethod
-    def get_by_token(cls, token, or_404=False, _abort: bool = True) -> "object|None":
-        if not hasattr(cls, "token"):
-            raise ValueError(f"{cls.__name__} has no 'token' attribute.")
-
+    def get_by_token(cls, token, or_404: bool = False) -> "object|None":
         query = cls.query.filter_by(token=token).first()
 
         if (not query) and (or_404):
-            if _abort:
-                abort(404)
-
-            return {}, 404
+            abort(404)
 
         return query
 
     @classmethod
     def get_all(cls, limit: int = None, basequery: bool = False) -> "list|BaseQuery":
         query = cls.query
-
-        if hasattr(cls, "id_user"):
-            query = query.filter_by(id_user=current_user.id)
 
         query = query.limit(limit)
 
