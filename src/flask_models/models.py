@@ -95,7 +95,7 @@ class _CRUD:
             obj.generate_token()
 
         try:
-            db.bulk_save_objects(objects)
+            db.add_all(objects)
             db.session.commit()
 
         except IntegrityError:
