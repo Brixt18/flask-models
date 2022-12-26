@@ -87,19 +87,19 @@ class _CRUD:
         return True
 
     @classmethod
-    def bulk_save(cls, objects:list, check_auth:bool=True):
-        if cls._check_auth(check_auth):
-            db.session.begin_nested()
+    def bulk_save(cls, objects:list):
+        # if cls._check_auth(check_auth):
+        db.session.begin_nested()
 
-            for obj in objects:
-                obj.generate_token()
+        for obj in objects:
+            obj.generate_token()
 
-            try:
-                db.bulk_save_objects(objects)
-                db.session.commit()
+        try:
+            db.bulk_save_objects(objects)
+            db.session.commit()
 
-            except IntegrityError:
-                db.session.rollback()
+        except IntegrityError:
+            db.session.rollback()
 
     @classmethod
     def get_by_id(cls, id, or_404: bool = False) -> "object|None":
