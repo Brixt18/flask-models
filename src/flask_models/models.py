@@ -25,6 +25,13 @@ class _CRUD:
 
         return True
 
+    def generate_token(self, length=15):
+        if not self.token:
+            self.token = _generate_token(15)
+
+        while self._exist_token(self.token):
+            self.token = _generate_token(15)
+        
     def save(self, check_auth: bool = True):
         if self._check_auth(check_auth):
             db.session.begin_nested()  # create checkpoint
@@ -78,6 +85,21 @@ class _CRUD:
             return False
 
         return True
+
+    @classmethod
+    def bulk_save(cls, objects:list, check_auth:bool=True):
+        if cls._check_auth(check_auth):
+            db.session.begin_nested()
+
+            for obj in objects:
+                obj.generate_token()
+
+            try:
+                db.bulk_save_objects(objects)
+                db.session.commit()
+
+            except IntegrityError:
+                db.session.rollback()
 
     @classmethod
     def get_by_id(cls, id, or_404: bool = False) -> "object|None":
