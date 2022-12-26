@@ -44,6 +44,20 @@ class _CRUD:
             except IntegrityError:
                 db.session.rollback()
 
+    def bulk_save(self, objects: list, generate_token: bool = True, check_auth: bool = True):
+        if self._check_auth(check_auth):
+            db.session.begin_nested()
+
+            if generate_token:
+                for obj in objects:
+                    if not obj.token:
+                        obj.token = _generate_token(15)
+
+                    while self._exist_token(obj.token):
+                        obj.token = _generate_token(15)
+
+            db.bulk_save_objects(objects)
+
     def delete(self, check_auth: bool = True):
         if self._check_auth(check_auth):
             db.session.begin_nested()
