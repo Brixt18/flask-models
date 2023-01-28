@@ -12,6 +12,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class _CRUD:
+	__abstract__ = True
+
 	@staticmethod
 	def _check_auth(self, check_auth: bool) -> bool:
 		"""
