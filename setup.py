@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='flask_models',
     packages=find_packages(include=["flask_models"]),
-    version='0.1.7',
+    version='0.1.8',
     description='Basics models for Python-Flask',
     author='Brixt18',
     license='MIT',

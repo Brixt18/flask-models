@@ -75,7 +75,7 @@ class _CRUD:
 		------
 		check_auth: bool - Indicates whether the current user's authentication status should be checked before saving the object. Default is True.
 		generate_token: bool - Indicates whether a token should be generated for each object before saving. Default is True.
-		hash_password: bool - Indicates whether the password should be hashed before saving the object. Default is True.
+		hash_password: bool - Indicates whether the password should be hashed before saving the object, if the model has the attribute "password" otherwise will be ignored. Default is True.
 
 		RETURNS
 		-------
@@ -88,7 +88,7 @@ class _CRUD:
 			if generate_token:
 				self.generate_token()
 
-			if hash_password:
+			if hash_password and hasattr(self, "password"):
 				self.password = generate_password_hash(self.password)
 
 			# commit
