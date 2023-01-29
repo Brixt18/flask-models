@@ -90,7 +90,7 @@ class _CRUD:
 			if generate_token:
 				self.generate_token()
 
-			if hash_password and hasattr(self, "password"):
+			if hash_password and hasattr(self, "password") and isinstance(self.password, str):
 				self.password = generate_password_hash(self.password)
 
 			# commit
