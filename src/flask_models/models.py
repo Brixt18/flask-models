@@ -5,10 +5,9 @@ from sqlite3 import IntegrityError
 from flask import abort
 from flask_login import current_user
 from flask_sqlalchemy.query import Query
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from .const import *
-
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class _CRUD:
