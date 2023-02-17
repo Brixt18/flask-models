@@ -1,11 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 
-# from app import db
-
-db = None
-
-def configurate_db(sqlachemy_db:SQLAlchemy):
-    db = sqlachemy_db
+db = SQLAlchemy()
 
 MODEL = db.Model
 COLUMN = db.Column
