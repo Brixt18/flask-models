@@ -42,7 +42,7 @@ if __name__ == "__main__":
 ## Considerations
 - `db` must be imported from `flask_models.const` and then initalized by `db.init_app(app)`
 - `flask_models.const` contains commons types of data 
-- - `STRING`, `STRING`, `TEXT`, `INTEGER`, `FLOAT`, `DATETIME`, `BOOLEAN`
+- - `STRING`, `TEXT`, `INTEGER`, `FLOAT`, `DATETIME`, `BOOLEAN`,
 - - Recommended use:
     ```python
     from flask_models.models import Model
