@@ -102,7 +102,7 @@ if user.check_password(request.form["password"]):
 - - If you are building a MVC app, this checks that the one who is doing the request is the same user or is a logged user.
 - - If you are building an API, you must set this to `False` always, or build your own auth checker.
 
-The model `Model` already includes `id`, `token`, `created_at`, `updated_at` and `is_active`, so is not necesary to define them in your models, they will inherit them from the Model, and its CRUD methods as well.
+The model `Model` already includes `id`, `token`, `created_at`, `updated_at` and `is_active`, so it is not necesary to define them in your models. They will inherit them from the Model, and its CRUD methods as well.
 
 # Issues
 There may have problems with Flask Login, so if your project is not using this library, the `check_auth` in the CRUD methods may raise an error. Set them to false or install Flask-Login
