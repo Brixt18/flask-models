@@ -164,7 +164,7 @@ class _CRUD:
 		return check_password_hash(self.password, password)
 
 	@classmethod
-	def bulk_save(cls, objects: list[object], check_auth: bool = True, generate_token: bool = True) -> None:
+	def bulk_save(cls, objects: list, check_auth: bool = True, generate_token: bool = True) -> None:
 		"""
 		Save multiple objects to the database in a single transaction.
 
