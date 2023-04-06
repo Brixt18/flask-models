@@ -235,7 +235,7 @@ class _CRUD:
 		return query
 
 	@classmethod
-	def get_all(cls, limit: int = None, basequery: bool = False) -> list | Query:
+	def get_all(cls, limit: int = None, basequery: bool = False) -> "list | Query":
 		"""
 		Retrieves all the records from the class's model, applying an optional limit and returning either the query or the query results.
 
