@@ -1,14 +1,22 @@
+import logging
 import secrets
 from datetime import datetime
 from sqlite3 import IntegrityError
+from typing import TypeVar, Union
 
 from flask import abort
-from flask_login import current_user
 from flask_sqlalchemy.query import Query
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .const import *
 
+try:
+	from flask_login import current_user
+
+except ImportError:
+	logging.warning("Could not import 'flask_login'. Any 'check_auth' will be True.")
+
+T = TypeVar("T")
 
 class _CRUD:
 	__abstract__ = True
@@ -26,8 +34,12 @@ class _CRUD:
 		-------
 		bool - False if the user is not authenticated and check_auth is True, True otherwise.
 		"""
-		if (check_auth) and (not current_user.is_authenticated):
-			return False
+		try:
+			if (check_auth) and (not current_user.is_authenticated):
+				return False
+			
+		except:
+			pass
 
 		return True
 
@@ -50,7 +62,7 @@ class _CRUD:
 
 		return True
 
-	def generate_token(self, length: int = 15) -> None:
+	def generate_token(self, length: int = 15) -> str:
 		"""
 		Generates a token for the current object, if the object does not have one already. It is assumed that the 'token' field is unique in the database.
 
@@ -60,7 +72,7 @@ class _CRUD:
 
 		RETURNS
 		-------
-		None - The method does not return any value.
+		str - The generated token.
 		"""
 		if not self.token:
 			self.token = secrets.token_hex(length)
@@ -68,7 +80,9 @@ class _CRUD:
 		while self._exist_token(self.token):
 			self.token = secrets.token_hex(length)
 
-	def save(self, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True) -> None:
+		return self.token
+
+	def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True) -> T:
 		"""
 		Save the current object to the database.
 
@@ -80,7 +94,7 @@ class _CRUD:
 
 		RETURNS
 		-------
-		None - The method does not return any value.
+		self - The current object itself.
 		"""
 		if self._check_auth(check_auth):
 			db.session.begin_nested()  # create checkpoint
@@ -89,7 +103,7 @@ class _CRUD:
 			if generate_token:
 				self.generate_token()
 
-			if hash_password and hasattr(self, "password") and isinstance(self.password, str):
+			if (hash_password) and (hasattr(self, "password")) and (isinstance(self.password, str)):
 				self.password = generate_password_hash(self.password)
 
 			# commit
@@ -99,7 +113,9 @@ class _CRUD:
 			except IntegrityError:
 				db.session.rollback()
 
-	def delete(self, check_auth: bool = True):
+		return self
+
+	def delete(self, check_auth: bool = True) -> None:
 		"""
 		Delete the current object from the database.
 
@@ -121,7 +137,7 @@ class _CRUD:
 			except IntegrityError:
 				db.session.rollback()
 
-	def update(self, data: dict, check_auth: bool = True) -> None:
+	def update(self: T, data: dict, check_auth: bool = True) -> T:
 		"""
 		Update the current object with the given data.
 
@@ -132,7 +148,7 @@ class _CRUD:
 
 		RETURNS
 		-------
-		None - The method does not return any value.
+		self - The current object itself.
 		"""
 		if self._check_auth(check_auth):
 			db.session.begin_nested()
@@ -148,6 +164,8 @@ class _CRUD:
 
 			except IntegrityError as e:
 				db.session.rollback()
+
+		return self
 
 	def check_password(self, password: str) -> bool:
 		"""
@@ -193,7 +211,7 @@ class _CRUD:
 				db.session.rollback()
 
 	@classmethod
-	def get_by_id(cls, id: int, or_404: bool = False) -> "object|None":
+	def get_by_id(cls: T, id: int, or_404: bool = False) -> Union[T, None]:
 		"""
 		Retrieves a record from the class's model by its id. It is assumed that the 'id' field is unique in the database.
 
@@ -214,7 +232,7 @@ class _CRUD:
 		return query
 
 	@classmethod
-	def get_by_token(cls, token: str, or_404: bool = False) -> "object|None":
+	def get_by_token(cls: T, token: str, or_404: bool = False) -> Union[T, None]:
 		"""
 		Retrieves a record from the class's model by its token. It is assumed that the 'token' field is unique in the database.
 
@@ -235,7 +253,7 @@ class _CRUD:
 		return query
 
 	@classmethod
-	def get_all(cls, limit: int = None, basequery: bool = False) -> "list | Query":
+	def get_all(cls, limit: int = None, basequery: bool = False) -> Union[list, Query]:
 		"""
 		Retrieves all the records from the class's model, applying an optional limit and returning either the query or the query results.
 
@@ -260,8 +278,7 @@ class Model(db.Model, _CRUD):
 	token = COLUMN(STRING(32), unique=True, nullable=False)
 
 	created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow())
-	updated_at = COLUMN(DATETIME, nullable=False,
-                     default=datetime.utcnow(), onupdate=datetime.utcnow())
+	updated_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow(), onupdate=datetime.utcnow())
 	is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
 	def __init__(self, *args, **kwargs):
