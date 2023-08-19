@@ -4,9 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flask_models"
-version = "0.2.8"
+version = "0.2.9"
 authors = [
-  { name="Brixt18", email="" },
+  {name="Brixt18", email=""},
 ]
 description = "Basics models for Python-Flask framework"
 readme = "README.md"

@@ -55,17 +55,17 @@ if __name__ == "__main__":
         ... # etc
     ```
 - [Flask SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/) must be installed
-- [Flask Login](https://flask-login.readthedocs.io/en/latest/) must be installed, even if not in use.
+- [Flask Login](https://flask-login.readthedocs.io/en/latest/) must be installed if you wants to use `check_auth` param.
 
 # The Models
-The models already have a CRUD (by using the class `_CRUD` in `flask_models.models`) that includes most of common cases and uses for the databases such as:
+The models already have a CRUD (by using the class `CRUD` in `flask_models.models`) that includes most of common cases and uses for the databases such as:
 
 ```python
-# get by ID or Token (token is a unique ID but longer and alpha, is for public use like URLs)
+# Retrieves a record from the class's model by its primary key (db.Column(..., primary_key=True))
 user = MyModel.get_by_id(my_id, or_404=False)
 
 # get all
-users = MyModel.get_all() #-> list of objects [MyModel(...), ...]
+users = MyModel.get_all() #-> list of objects [MyModel(), ...]
 users = MyModel.get_all(basequery=True) #-> the BaseQuery object
 users = MyModel.get_all(limit=30) #-> set the limit of the query
 
@@ -103,6 +103,3 @@ if user.check_password(request.form["password"]):
 - - If you are building an API, you must set this to `False` always, or build your own auth checker.
 
 The model `Model` already includes `id`, `token`, `created_at`, `updated_at` and `is_active`, so it is not necesary to define them in your models. They will inherit them from the Model, and its CRUD methods as well.
-
-# Issues
-There may have problems with Flask Login, so if your project is not using this library, the `check_auth` in the CRUD methods may raise an error. Set them to false or install Flask-Login

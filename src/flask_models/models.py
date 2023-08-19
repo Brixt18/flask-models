@@ -7,6 +7,7 @@ from typing import TypeVar, Union
 from flask import abort
 from flask_sqlalchemy.query import Query
 from werkzeug.security import check_password_hash, generate_password_hash
+from typing import Any
 
 from .const import *
 
@@ -18,7 +19,7 @@ except ImportError:
 
 T = TypeVar("T")
 
-class _CRUD:
+class CRUD:
 	__abstract__ = True
 
 	@staticmethod
@@ -211,20 +212,20 @@ class _CRUD:
 				db.session.rollback()
 
 	@classmethod
-	def get_by_id(cls: T, id: int, or_404: bool = False) -> Union[T, None]:
+	def get_by_id(cls: T, id: Any, or_404: bool = False) -> Union[T, None]:
 		"""
-		Retrieves a record from the class's model by its id. It is assumed that the 'id' field is unique in the database.
+		Retrieves a record from the class's model by its primary key (`db.Column(..., primary_key=True)`).
 
 		PARAMS
 		------
-		id: int - id of the record to retrieve.
+		id: Any - id of the record to retrieve.
 		or_404: bool - Indicates whether a 404 error should be raised if the record is not found. Default is False.
 
 		RETURNS
 		-------
 		object | None - The object representing the record, or None if not found and or_404 is False.
 		"""
-		query = cls.query.filter_by(id=id).first()
+		query = cls.query.get(id)
 
 		if (not query) and (or_404):
 			abort(404)
@@ -253,7 +254,7 @@ class _CRUD:
 		return query
 
 	@classmethod
-	def get_all(cls, limit: int = None, basequery: bool = False) -> Union[list, Query]:
+	def get_all(cls: T, limit: int = None, basequery: bool = False) -> Union[list[T], Query]:
 		"""
 		Retrieves all the records from the class's model, applying an optional limit and returning either the query or the query results.
 
@@ -271,7 +272,7 @@ class _CRUD:
 		return query if basequery else query.all()
 
 
-class Model(db.Model, _CRUD):
+class Model(db.Model, CRUD):
 	__abstract__ = True
 
 	id = COLUMN(INTEGER, primary_key=True, autoincrement=True, nullable=False)
