@@ -12,278 +12,288 @@ from typing import Any
 from .const import *
 
 try:
-	from flask_login import current_user
+    from flask_login import current_user
 
 except ImportError:
-	logging.warning("Could not import 'flask_login'. Any 'check_auth' will be True.")
+    logging.warning(
+        "Could not import 'flask_login'. Any 'check_auth' will be True.")
 
 T = TypeVar("T")
 
+
 class CRUD:
-	__abstract__ = True
+    __abstract__ = True
 
-	@staticmethod
-	def _check_auth(check_auth: bool) -> bool:
-		"""
-		Check the current user's authentication status.
+    @staticmethod
+    def _check_auth(check_auth: bool) -> bool:
+        """
+        Check the current user's authentication status.
 
-		PARAMS
-		------
-		check_auth: bool - Indicates whether the current user's authentication status should be checked. Default is True.
+        PARAMS
+        ------
+        check_auth: bool - Indicates whether the current user's authentication status should be checked. Default is True.
 
-		RETURNS
-		-------
-		bool - False if the user is not authenticated and check_auth is True, True otherwise.
-		"""
-		try:
-			if (check_auth) and (not current_user.is_authenticated):
-				return False
-			
-		except:
-			pass
+        RETURNS
+        -------
+        bool - False if the user is not authenticated and check_auth is True, True otherwise.
+        """
+        try:
+            if (check_auth) and (not current_user.is_authenticated):
+                return False
 
-		return True
+        except:
+            pass
 
-	def _exist_token(self, token: str) -> bool:
-		"""
-		Check if the given token already exists in the database
+        return True
 
-		PARAMS
-		------
-		token: str - token to check if exists
+    def _exist_token(self, token: str) -> bool:
+        """
+        Check if the given token already exists in the database
 
-		RETURNS
-		-------
-		bool - True if the token already exists in the database, False otherwise.
-		"""
-		query = self.get_by_token(token)
+        PARAMS
+        ------
+        token: str - token to check if exists
 
-		if (query is None) or (query.id == self.id):
-			return False
+        RETURNS
+        -------
+        bool - True if the token already exists in the database, False otherwise.
+        """
+        query = self.get_by_token(token)
 
-		return True
+        if (query is None) or (query.id == self.id):
+            return False
 
-	def generate_token(self, length: int = 15) -> str:
-		"""
-		Generates a token for the current object, if the object does not have one already. It is assumed that the 'token' field is unique in the database.
+        return True
 
-		PARAMS
-		------
-		length: int - The length of the token to be generated. Default is 15.
+    def generate_token(self, length: int = 15) -> str:
+        """
+        Generates a token for the current object, if the object does not have one already. It is assumed that the 'token' field is unique in the database.
 
-		RETURNS
-		-------
-		str - The generated token.
-		"""
-		if not self.token:
-			self.token = secrets.token_hex(length)
+        PARAMS
+        ------
+        length: int - The length of the token to be generated. Default is 15.
 
-		while self._exist_token(self.token):
-			self.token = secrets.token_hex(length)
+        RETURNS
+        -------
+        str - The generated token.
+        """
+        if not self.token:
+            self.token = secrets.token_hex(length)
 
-		return self.token
+        while self._exist_token(self.token):
+            self.token = secrets.token_hex(length)
 
-	def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True) -> T:
-		"""
-		Save the current object to the database.
+        return self.token
 
-		PARAMS
-		------
-		check_auth: bool - Indicates whether the current user's authentication status should be checked before saving the object. Default is True.
-		generate_token: bool - Indicates whether a token should be generated for each object before saving. Default is True.
-		hash_password: bool - Indicates whether the password should be hashed before saving the object, if the model has the attribute "password" otherwise will be ignored. Default is True.
+    def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True) -> T:
+        """
+        Save the current object to the database.
 
-		RETURNS
-		-------
-		self - The current object itself.
-		"""
-		if self._check_auth(check_auth):
-			db.session.begin_nested()  # create checkpoint
-			db.session.add(self)
+        PARAMS
+        ------
+        check_auth: bool - Indicates whether the current user's authentication status should be checked before saving the object. Default is True.
+        generate_token: bool - Indicates whether a token should be generated for each object before saving. Default is True.
+        hash_password: bool - Indicates whether the password should be hashed before saving the object, if the model has the attribute "password" otherwise will be ignored. Default is True.
 
-			if generate_token:
-				self.generate_token()
+        RETURNS
+        -------
+        self - The current object itself.
+        """
+        if self._check_auth(check_auth):
+            db.session.begin_nested()  # create checkpoint
+            db.session.add(self)
 
-			if (hash_password) and (hasattr(self, "password")) and (isinstance(self.password, str)):
-				self.password = generate_password_hash(self.password)
+            if generate_token:
+                self.generate_token()
 
-			# commit
-			try:
-				db.session.commit()
+            if (hash_password) and (hasattr(self, "password")) and (isinstance(self.password, str)):
+                self.password = generate_password_hash(self.password)
 
-			except IntegrityError:
-				db.session.rollback()
+            # commit
+            try:
+                db.session.commit()
 
-		return self
+            except IntegrityError:
+                db.session.rollback()
 
-	def delete(self, check_auth: bool = True) -> None:
-		"""
-		Delete the current object from the database.
+        return self
 
-		PARAMS
-		------
-		check_auth: bool - Indicates whether the current user's authentication status should be checked before deleting the object. Default is True.
+    def delete(self, soft: bool = True, check_auth: bool = True) -> None:
+        """
+        Delete the current object from the database.
 
-		RETURNS
-		-------
-		None - The method does not return any value.
-		"""
-		if self._check_auth(check_auth):
-			db.session.begin_nested()
-			try:
-				db.session.delete(self)
+        PARAMS
+        ------
+        check_auth: bool - Indicates whether the current user's authentication status should be checked before deleting the object. Default is True.
+        soft: bool, optional
+                If True, performs a soft delete by marking the object as inactive instead of physically removing it from the database. For soft-deletes it is necessary to set `self.is_active` field (included in the `Model`).
+                If False, performs a hard delete by permanently removing the object from the database. Default is True.
 
-				db.session.commit()
+        RETURNS
+        -------
+        None - The method does not return any value.
+        """
+        if self._check_auth(check_auth):
+            db.session.begin_nested()
+            try:
+                if soft:
+                    self.update({"is_active": False})
 
-			except IntegrityError:
-				db.session.rollback()
+                else:
+                    db.session.delete(self)
 
-	def update(self: T, data: dict, check_auth: bool = True) -> T:
-		"""
-		Update the current object with the given data.
+                db.session.commit()
 
-		PARAMS
-		------
-		data: dict - A dictionary containing the data to update the current object with.
-		check_auth: bool - Indicates whether the current user's authentication status should be checked before updating the object. Default is True.
+            except IntegrityError:
+                db.session.rollback()
 
-		RETURNS
-		-------
-		self - The current object itself.
-		"""
-		if self._check_auth(check_auth):
-			db.session.begin_nested()
-			try:
-				for key, value in data.items():
-					if hasattr(self, key):
-						setattr(self, key, value)
+    def update(self: T, data: dict, check_auth: bool = True) -> T:
+        """
+        Update the current object with the given data.
 
-				if hasattr(self, "updated_at"):
-					self.updated_at = datetime.utcnow()
+        PARAMS
+        ------
+        data: dict - A dictionary containing the data to update the current object with.
+        check_auth: bool - Indicates whether the current user's authentication status should be checked before updating the object. Default is True.
 
-				db.session.commit()
+        RETURNS
+        -------
+        self - The current object itself.
+        """
+        if self._check_auth(check_auth):
+            db.session.begin_nested()
+            try:
+                for key, value in data.items():
+                    if hasattr(self, key):
+                        setattr(self, key, value)
 
-			except IntegrityError as e:
-				db.session.rollback()
+                if hasattr(self, "updated_at"):
+                    self.updated_at = datetime.utcnow()
 
-		return self
+                db.session.commit()
 
-	def check_password(self, password: str) -> bool:
-		"""
-		Check if the provided password matches the hashed password of the current object.
+            except IntegrityError as e:
+                db.session.rollback()
 
-		PARAMS
-		------
-		password: str - The plain text password to check.
+        return self
 
-		RETURNS
-		-------
-		bool - Returns True if the provided password matches the hashed password of the current object, False otherwise.
-		"""
-		return check_password_hash(self.password, password)
+    def check_password(self, password: str) -> bool:
+        """
+        Check if the provided password matches the hashed password of the current object.
 
-	@classmethod
-	def bulk_save(cls, objects: list, check_auth: bool = True, generate_token: bool = True) -> None:
-		"""
-		Save multiple objects to the database in a single transaction.
+        PARAMS
+        ------
+        password: str - The plain text password to check.
 
-		PARAMS
-		------
-		objects: list - A list of objects to be saved.
-		check_auth: bool - Indicates whether the current user's authentication status should be checked before saving the objects. Default is True.
-		generate_token: bool - Indicates whether a token should be generated for each object before saving. Default is True.
+        RETURNS
+        -------
+        bool - Returns True if the provided password matches the hashed password of the current object, False otherwise.
+        """
+        return check_password_hash(self.password, password)
 
-		RETURNS
-		-------
-		None - The method does not return any value.
-		"""
-		if cls._check_auth(check_auth):
-			db.session.begin_nested()
+    @classmethod
+    def bulk_save(cls, objects: list, check_auth: bool = True, generate_token: bool = True) -> None:
+        """
+        Save multiple objects to the database in a single transaction.
 
-			if generate_token:
-				for obj in objects:
-					obj.generate_token()
+        PARAMS
+        ------
+        objects: list - A list of objects to be saved.
+        check_auth: bool - Indicates whether the current user's authentication status should be checked before saving the objects. Default is True.
+        generate_token: bool - Indicates whether a token should be generated for each object before saving. Default is True.
 
-			try:
-				db.session.add_all(objects)
-				db.session.commit()
+        RETURNS
+        -------
+        None - The method does not return any value.
+        """
+        if cls._check_auth(check_auth):
+            db.session.begin_nested()
 
-			except IntegrityError:
-				db.session.rollback()
+            if generate_token:
+                for obj in objects:
+                    obj.generate_token()
 
-	@classmethod
-	def get_by_id(cls: T, id: Any, or_404: bool = False) -> Union[T, None]:
-		"""
-		Retrieves a record from the class's model by its primary key (`db.Column(..., primary_key=True)`).
+            try:
+                db.session.add_all(objects)
+                db.session.commit()
 
-		PARAMS
-		------
-		id: Any - id of the record to retrieve.
-		or_404: bool - Indicates whether a 404 error should be raised if the record is not found. Default is False.
+            except IntegrityError:
+                db.session.rollback()
 
-		RETURNS
-		-------
-		object | None - The object representing the record, or None if not found and or_404 is False.
-		"""
-		query = cls.query.get(id)
+    @classmethod
+    def get_by_id(cls: T, id: Any, or_404: bool = False) -> Union[T, None]:
+        """
+        Retrieves a record from the class's model by its primary key (`db.Column(..., primary_key=True)`).
 
-		if (not query) and (or_404):
-			abort(404)
+        PARAMS
+        ------
+        id: Any - id of the record to retrieve.
+        or_404: bool - Indicates whether a 404 error should be raised if the record is not found. Default is False.
 
-		return query
+        RETURNS
+        -------
+        object | None - The object representing the record, or None if not found and or_404 is False.
+        """
+        query = cls.query.get(id)
 
-	@classmethod
-	def get_by_token(cls: T, token: str, or_404: bool = False) -> Union[T, None]:
-		"""
-		Retrieves a record from the class's model by its token. It is assumed that the 'token' field is unique in the database.
+        if (not query) and (or_404):
+            abort(404)
 
-		PARAMS
-		------
-		token: str - Token of the record to retrieve.
-		or_404: bool - Indicates whether a 404 error should be raised if the record is not found. Default is False.
+        return query
 
-		RETURNS
-		-------
-		object | None - The object representing the record, or None if not found and or_404 is False.
-		"""
-		query = cls.query.filter_by(token=token).first()
+    @classmethod
+    def get_by_token(cls: T, token: str, or_404: bool = False) -> Union[T, None]:
+        """
+        Retrieves a record from the class's model by its token. It is assumed that the 'token' field is unique in the database.
 
-		if (not query) and (or_404):
-			abort(404)
+        PARAMS
+        ------
+        token: str - Token of the record to retrieve.
+        or_404: bool - Indicates whether a 404 error should be raised if the record is not found. Default is False.
 
-		return query
+        RETURNS
+        -------
+        object | None - The object representing the record, or None if not found and or_404 is False.
+        """
+        query = cls.query.filter_by(token=token).first()
 
-	@classmethod
-	def get_all(cls: T, limit: int = None, basequery: bool = False) -> Union[list[T], Query]:
-		"""
-		Retrieves all the records from the class's model, applying an optional limit and returning either the query or the query results.
+        if (not query) and (or_404):
+            abort(404)
 
-		PARAMS
-		------
-		limit: int - Maximum number of records to be returned. If not provided, no limit will be applied.
-		basequery: bool - Indicates whether the query object should be returned or the query results. Default is False.
+        return query
 
-		RETURNS
-		-------
-		list | Query - A list of the query results or the query object, depending on the value of the "basequery" parameter.
-		"""
-		query = cls.query.limit(limit)
+    @classmethod
+    def get_all(cls: T, limit: int = None, basequery: bool = False) -> Union[list[T], Query]:
+        """
+        Retrieves all the records from the class's model, applying an optional limit and returning either the query or the query results.
 
-		return query if basequery else query.all()
+        PARAMS
+        ------
+        limit: int - Maximum number of records to be returned. If not provided, no limit will be applied.
+        basequery: bool - Indicates whether the query object should be returned or the query results. Default is False.
+
+        RETURNS
+        -------
+        list | Query - A list of the query results or the query object, depending on the value of the "basequery" parameter.
+        """
+        query = cls.query.limit(limit)
+
+        return query if basequery else query.all()
 
 
 class Model(db.Model, CRUD):
-	__abstract__ = True
+    __abstract__ = True
 
-	id = COLUMN(INTEGER, primary_key=True, autoincrement=True, nullable=False)
-	token = COLUMN(STRING(32), unique=True, nullable=False)
+    id = COLUMN(INTEGER, primary_key=True, autoincrement=True, nullable=False)
+    token = COLUMN(STRING(32), unique=True, nullable=False)
 
-	created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow())
-	updated_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow(), onupdate=datetime.utcnow())
-	is_active = COLUMN(BOOLEAN, nullable=False, default=True)
+    created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow())
+    updated_at = COLUMN(DATETIME, nullable=False,
+                        default=datetime.utcnow(), onupdate=datetime.utcnow())
+    is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-	def __repr__(self):
-		return '<{}>'.format(self.__class__.__name__)
+    def __repr__(self):
+        return '<{}>'.format(self.__class__.__name__)
