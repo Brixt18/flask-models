@@ -113,7 +113,8 @@ class CRUD:
             try:
                 db.session.commit()
 
-            except IntegrityError:
+            except Exception as e:
+                logging.exception(e)
                 db.session.rollback()
 
         return self
@@ -144,7 +145,8 @@ class CRUD:
 
                 db.session.commit()
 
-            except IntegrityError:
+            except Exception as e:
+                logging.exception(e)
                 db.session.rollback()
 
     def update(self: T, data: dict, check_auth: bool = True) -> T:
@@ -172,7 +174,8 @@ class CRUD:
 
                 db.session.commit()
 
-            except IntegrityError as e:
+            except Exception as e:
+                logging.exception(e)
                 db.session.rollback()
 
         return self
@@ -217,7 +220,8 @@ class CRUD:
                 db.session.add_all(objects)
                 db.session.commit()
 
-            except IntegrityError:
+            except Exception as e:
+                logging.exception(e)
                 db.session.rollback()
 
     @classmethod
