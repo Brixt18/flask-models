@@ -302,9 +302,8 @@ class Model(db.Model, CRUD):
     id = COLUMN(INTEGER, primary_key=True, autoincrement=True, nullable=False)
     token = COLUMN(STRING(32), unique=True, nullable=False)
 
-    created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow())
-    updated_at = COLUMN(DATETIME, nullable=False,
-                        default=datetime.utcnow(), onupdate=datetime.utcnow())
+    created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow)
+    updated_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
     def __init__(self, *args, **kwargs):
