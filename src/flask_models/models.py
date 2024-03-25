@@ -1,6 +1,6 @@
 import logging
 import secrets
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlite3 import IntegrityError
 from typing import TypeVar, Union
 
@@ -20,6 +20,8 @@ except ImportError:
 
 T = TypeVar("T")
 
+def get_current_timezone(tz=UTC):
+    return datetime.now(tz=UTC)
 
 class CRUD:
     __abstract__ = True
@@ -298,12 +300,12 @@ class CRUD:
 
 class Model(db.Model, CRUD):
     __abstract__ = True
-
+    
     id = COLUMN(INTEGER, primary_key=True, autoincrement=True, nullable=False)
     token = COLUMN(STRING(32), unique=True, nullable=False)
 
-    created_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow)
-    updated_at = COLUMN(DATETIME, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = COLUMN(DATETIME, nullable=False, default=get_current_timezone)
+    updated_at = COLUMN(DATETIME, nullable=False, default=get_current_timezone, onupdate=get_current_timezone)
     is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
     def __init__(self, *args, **kwargs):
