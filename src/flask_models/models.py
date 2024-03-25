@@ -85,7 +85,7 @@ class CRUD:
 
         return self.token
 
-    def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True) -> T:
+    def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True, close_session_after: bool = True) -> T:
         """
         Save the current object to the database.
 
@@ -116,10 +116,14 @@ class CRUD:
             except Exception as e:
                 logging.exception(e)
                 db.session.rollback()
+            
+            finally:
+                if close_session_after:
+                    db.session.close()
 
         return self
 
-    def delete(self, soft: bool = True, check_auth: bool = True) -> None:
+    def delete(self, soft: bool = True, check_auth: bool = True, close_session_after: bool = True) -> None:
         """
         Delete the current object from the database.
 
@@ -149,7 +153,11 @@ class CRUD:
                 logging.exception(e)
                 db.session.rollback()
 
-    def update(self: T, data: dict, check_auth: bool = True) -> T:
+            finally:
+                if close_session_after:
+                    db.session.close()
+
+    def update(self: T, data: dict, check_auth: bool = True, close_session_after: bool = True) -> T:
         """
         Update the current object with the given data.
 
@@ -177,7 +185,10 @@ class CRUD:
             except Exception as e:
                 logging.exception(e)
                 db.session.rollback()
-
+                
+            finally:
+                if close_session_after:
+                    db.session.close()
         return self
 
     def check_password(self, password: str) -> bool:
