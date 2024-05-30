@@ -1,7 +1,7 @@
 import logging
 import secrets
 from datetime import UTC, datetime
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar, Union, Self
 
 from flask import abort
 from flask_sqlalchemy.query import Query
@@ -84,7 +84,7 @@ class CRUD:
 
         return self.token
 
-    def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True, close_session_after: bool = False) -> T:
+    def save(self, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True, close_session_after: bool = False) -> Self:
         """
         Save the current object to the database.
 
@@ -156,7 +156,7 @@ class CRUD:
                 if close_session_after:
                     db.session.close()
 
-    def update(self: T, data: dict, check_auth: bool = True, close_session_after: bool = False) -> T:
+    def update(self, data: dict, check_auth: bool = True, close_session_after: bool = False) -> Self:
         """
         Update the current object with the given data.
 
@@ -302,8 +302,7 @@ class Model(db.Model, CRUD):
     token = COLUMN(STRING(32), unique=True, nullable=False)
 
     created_at = COLUMN(DATETIME, nullable=False, default=get_current_timezone)
-    updated_at = COLUMN(DATETIME, nullable=False,
-                        default=get_current_timezone, onupdate=get_current_timezone)
+    updated_at = COLUMN(DATETIME, nullable=False,default=get_current_timezone, onupdate=get_current_timezone)  # noqa
     is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
     def __init__(self, *args, **kwargs):
