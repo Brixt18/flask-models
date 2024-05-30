@@ -1,27 +1,20 @@
 import logging
 import secrets
-from datetime import datetime, UTC
-from sqlite3 import IntegrityError
-from typing import TypeVar, Union
+from datetime import UTC, datetime
+from typing import Any, TypeVar, Union
 
 from flask import abort
 from flask_sqlalchemy.query import Query
 from werkzeug.security import check_password_hash, generate_password_hash
-from typing import Any
 
 from .const import *
 
-try:
-    from flask_login import current_user
-
-except ImportError:
-    logging.warning(
-        "Could not import 'flask_login'. Any 'check_auth' will be True.")
-
 T = TypeVar("T")
+
 
 def get_current_timezone(tz=UTC):
     return datetime.now(tz=UTC)
+
 
 class CRUD:
     __abstract__ = True
@@ -39,12 +32,16 @@ class CRUD:
         -------
         bool - False if the user is not authenticated and check_auth is True, True otherwise.
         """
-        try:
-            if (check_auth) and (not current_user.is_authenticated):
-                return False
+        if check_auth:
+            try:
+                from flask_login import current_user
 
-        except:
-            pass
+                if not current_user.is_authenticated:
+                    logging.info("Authentication validation 'check_auth' failed: user is not authenticated.")  # noqa
+                    return False
+
+            except ImportError:
+                logging.warning("Could not import 'flask_login'. 'check_auth' will be True.")  # noqa
 
         return True
 
@@ -87,7 +84,7 @@ class CRUD:
 
         return self.token
 
-    def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True, close_session_after: bool = True) -> T:
+    def save(self: T, check_auth: bool = True, generate_token: bool = True, hash_password: bool = True, close_session_after: bool = False) -> T:
         """
         Save the current object to the database.
 
@@ -118,14 +115,14 @@ class CRUD:
             except Exception as e:
                 logging.exception(e)
                 db.session.rollback()
-            
+
             finally:
                 if close_session_after:
                     db.session.close()
 
         return self
 
-    def delete(self, soft: bool = True, check_auth: bool = True, close_session_after: bool = True) -> None:
+    def delete(self, soft: bool = True, check_auth: bool = True, close_session_after: bool = False) -> None:
         """
         Delete the current object from the database.
 
@@ -159,7 +156,7 @@ class CRUD:
                 if close_session_after:
                     db.session.close()
 
-    def update(self: T, data: dict, check_auth: bool = True, close_session_after: bool = True) -> T:
+    def update(self: T, data: dict, check_auth: bool = True, close_session_after: bool = False) -> T:
         """
         Update the current object with the given data.
 
@@ -187,7 +184,7 @@ class CRUD:
             except Exception as e:
                 logging.exception(e)
                 db.session.rollback()
-                
+
             finally:
                 if close_session_after:
                     db.session.close()
@@ -300,12 +297,13 @@ class CRUD:
 
 class Model(db.Model, CRUD):
     __abstract__ = True
-    
+
     id = COLUMN(INTEGER, primary_key=True, autoincrement=True, nullable=False)
     token = COLUMN(STRING(32), unique=True, nullable=False)
 
     created_at = COLUMN(DATETIME, nullable=False, default=get_current_timezone)
-    updated_at = COLUMN(DATETIME, nullable=False, default=get_current_timezone, onupdate=get_current_timezone)
+    updated_at = COLUMN(DATETIME, nullable=False,
+                        default=get_current_timezone, onupdate=get_current_timezone)
     is_active = COLUMN(BOOLEAN, nullable=False, default=True)
 
     def __init__(self, *args, **kwargs):
