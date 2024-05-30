@@ -175,9 +175,15 @@ class CRUD:
                 for key, value in data.items():
                     if hasattr(self, key):
                         setattr(self, key, value)
+                    
+                    else:
+                        logging.warning(f"Not updating attribute '{key}', does not exist for '{repr(self)}'.")
 
                 if hasattr(self, "updated_at"):
-                    self.updated_at = datetime.utcnow()
+                    self.updated_at = get_current_timezone()
+                
+                else:
+                    logging.warning(f"No updating 'updated_at', does not exist for '{repr(self)}'.")
 
                 db.session.commit()
 
